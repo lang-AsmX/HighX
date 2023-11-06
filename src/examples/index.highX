@@ -1,0 +1,9 @@
+/*
+ This block comment
+ */
+ 
+let age = 18;
+let name = 'Tom'; print(age);
+
+print(name);
+

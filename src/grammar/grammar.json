@@ -1,0 +1,45 @@
+{
+    "VariableDeclaration": [
+        { "token": "IDENTIFER" },
+        { "token": "IDENTIFER" },
+        { "token": "EQUAL" },
+
+        {
+            "or": [
+                { "token": "NUMBER" },
+                { "token": "STRING" }
+            ] 
+        }
+    ],
+
+
+    "VariableTypeDeclaration": [
+        { "token": "IDENTIFER" },
+        { "token": "IDENTIFER" },
+        { "token": "IDENTIFER" },
+        { "token": "EQUAL" },
+
+        {
+            "or": [
+                { "token": "NUMBER" },
+                { "token": "STRING" }
+            ] 
+        }
+    ],
+
+
+    "CallSimpleExpression": [
+        { "token": "IDENTIFER" },
+        { "token": "OPEN_PAREN" },
+
+        {
+            "or": [
+                { "token": "NUMBER" },
+                { "token": "STRING" },
+                { "token": "IDENTIFER" }
+            ] 
+        },
+
+        { "token": "CLOSE_PAREN" }
+    ]
+}
