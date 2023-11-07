@@ -100,6 +100,8 @@ class Interpreter {
                 if (this.ast[this.current].type == "EOF") break;
                 else if (this.isEndCode(this.ast[this.current])) 
                     this.current++;
+                else if (this.ast[this.current].type.toLowerCase() == 'space')
+                    this.current++;
                 else
                     this.exceptionInvalidToken(this.ast[this.current]);
             }
@@ -112,6 +114,11 @@ class Interpreter {
         
         if (operator.type.toLowerCase() == 'equal') {
             const mutable = { let: 'variable', const: 'constant' }[id.lexem];
+            
+            if (VirtualDB.getRecord('variable', name.lexem) || VirtualDB.getRecord('constant', name.lexem)) {
+                this.exception(`Identifier '${name.lexem}' has already been declared`, name, false);
+            }
+
             VirtualDB.newRecord(mutable, name.lexem, { mutable, name, value });
         }
     }
@@ -119,26 +126,12 @@ class Interpreter {
     CallSimpleExpression() {
         const [name, ref] = [this.miniast[0], this.miniast[2]];
         let argument = ref.lexem;
-
-        if (ref.type.toLowerCase() == 'identifer') {
-            let get = VirtualDB.getRecord('variable', ref.lexem);
-            let getBuf;
-
-            if (!get) get = VirtualDB.getRecord('constant', ref.lexem);
-
-            if (get) {
-                getBuf = get;
-                get = get?.value?.lexem;
-            }
-
-            if (!get) get = ref.lexem;
-            if (getBuf?.value?.type.toLowerCase() == 'string') get = getBuf?.value?.lexem.slice(1, -1);
-
-            argument = get;
-        }
+        argument = this.getValue(ref);
 
         if (name.lexem == 'print') {
             console.log(argument);
+        } else {
+            this.exception(`'${name.lexem}' is not defined`, name, false);
         }
     }
 
@@ -147,17 +140,23 @@ class Interpreter {
     }
 
     getValue(token) {
-        if (token.lexem.startsWith('$')) {
-            if (/\$\d+/.test(token.lexem)) return { response: token.lexem, status: 200, register: true, argument: true }
-            else if (!this.isRegister(token.lexem)) this.exceptionInvalidToken(token.lexem);
-            return { response: token.lexem, status: 200, register: true };
-        } else if (token.lexem.startsWith('[') && token.lexem.endsWith(']')) {
-            return { response: Section.read(token.lexem.slice(1, -1)), status: Section.read(token.lexem.slice(1, -1)) ? 200 : 404, section: true };
-        } else if (['NUMBER', 'STRING'].includes(token.type)) {
-            if (token.type == 'STRING') return { response: token.lexem.slice(1, -1), status: 200, primitive: true };
-            return { response: token.lexem, status: 200, primitive: true };
+        if (token.type.toLowerCase() == 'identifer') {
+            let record = VirtualDB.getRecord('variable', token.lexem);
+            let getBuf;
+
+            if (!record) record = VirtualDB.getRecord('constant', token.lexem);
+
+            if (record) {
+                getBuf = record;
+                record = record?.value?.lexem;
+            }
+
+            if (getBuf?.value?.type.toLowerCase() == 'string') record = getBuf?.value?.lexem.slice(1, -1);
+            if (!record) this.exception(`'${token.lexem}' is not defined`, token, false);
+
+            return record;
         } else {
-            this.exceptionInvalidToken(token);
+            return token.lexem;
         }
     }
 
@@ -167,13 +166,6 @@ class Interpreter {
 
     isExceptionValue(value) {
         return [undefined, null, NaN, Infinity].includes(value);
-    }
-
-    handleValue(value, token) {
-        if (value?.argument) return { response: this[value?.response] };
-        else if (value?.register) return { response: this[value?.response] };
-        else if (value?.section) return { response: Section.read(token?.lexem.slice(1, -1)) };
-        return { response: value.response };
     }
 }
 

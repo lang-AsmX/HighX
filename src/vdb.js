@@ -8,7 +8,7 @@ class VirtualDB {
     }
 
     static getRecord(collection, name) {
-        return name ? this.db[collection][name] : this.db[collection];
+        return name ? this.db[collection]?.[name] : this.db[collection];
     }
 
     static clearRecord(collection, name) {

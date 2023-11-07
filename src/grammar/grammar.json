@@ -41,5 +41,22 @@
         },
 
         { "token": "CLOSE_PAREN" }
+    ],
+
+
+    "SimpleFunctionDeclaration": [
+        { "token": "IDENTIFER" },
+        { "token": "IDENTIFER" },
+        { "token": "OPEN_PAREN" },
+
+        {
+            "or": [
+                { "token": "NUMBER" },
+                { "token": "STRING" },
+                { "token": "IDENTIFER" }
+            ] 
+        },
+
+        { "token": "CLOSE_PAREN" }
     ]
 }
