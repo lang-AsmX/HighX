@@ -3,6 +3,7 @@ const llvm = require("llvm.js/llvm");
 const exceptions = require('llvm.js/exceptions');
 const ExtensionType = require('./types/extensionType');
 const VirtualDB = require('./vdb');
+const PrimitiveType = require('./types/primitiveType');
 
 class Interpreter {
     current = 0;
@@ -82,8 +83,8 @@ class Interpreter {
             else if ((this.isGrammar = llvm.Grammar.verifyGrammarNoStrict(this.current, this.ast, grammar.VariableDeclaration))) {
                 this.getMiniAst();
                 const name = this.miniast[0];
-
-                if (['let', 'const'].includes(name.lexem)) {
+                
+                if ([['let', 'const'].includes(name.lexem), ExtensionType.is(name.lexem), PrimitiveType.is(name.lexem)].includes(true)) {
                     this.endIterator();
                     this.VariableExpression(name);
                 } else
@@ -102,24 +103,37 @@ class Interpreter {
                     this.current++;
                 else if (this.ast[this.current].type.toLowerCase() == 'space')
                     this.current++;
-                else
+                else {
                     this.exceptionInvalidToken(this.ast[this.current]);
+                }
             }
         }
     }
 
 
     VariableExpression() {
-        const [id, name, operator, value] = this.miniast;
-        
+        const [id, name, operator] = this.miniast;
+        let valueToken = this.miniast[this.miniast.length - 1];
+        valueToken.lexem = this.getValue(valueToken);
+
         if (operator.type.toLowerCase() == 'equal') {
-            const mutable = { let: 'variable', const: 'constant' }[id.lexem];
-            
+            const mutable = { let: 'variable', const: 'constant' };
+            let mutable_t = mutable[id.lexem];
+            const message = `The value '${valueToken.lexem}' does not match the type '${id.lexem}'`;
+
+            let condition_t = 
+            ({
+                [ExtensionType.is(id.lexem)]: () => !ExtensionType.check(id.lexem, valueToken) && this.exception(message, id, false),
+                [PrimitiveType.is(id.lexem)]: () => !PrimitiveType.check(id.lexem, valueToken) && this.exception(message, id, false)
+            }?.[true]?.());
+
+            if (!condition_t) mutable_t = mutable.let;
+
             if (VirtualDB.getRecord('variable', name.lexem) || VirtualDB.getRecord('constant', name.lexem)) {
                 this.exception(`Identifier '${name.lexem}' has already been declared`, name, false);
             }
 
-            VirtualDB.newRecord(mutable, name.lexem, { mutable, name, value });
+            VirtualDB.newRecord(mutable_t, name.lexem, { mutable, name, value: valueToken });
         }
     }
 
@@ -150,9 +164,13 @@ class Interpreter {
                 getBuf = record;
                 record = record?.value?.lexem;
             }
-
+            
             if (getBuf?.value?.type.toLowerCase() == 'string') record = getBuf?.value?.lexem.slice(1, -1);
-            if (!record) this.exception(`'${token.lexem}' is not defined`, token, false);
+            if (!record) {
+                if (PrimitiveType.check('bool', token)) {
+                    return token.lexem;
+                } else this.exception(`'${token.lexem}' is not defined`, token, false);
+            }
 
             return record;
         } else {

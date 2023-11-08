@@ -3,8 +3,19 @@
  */
 
 let age = 18;
-let name = 'Tom'; print(age);
+let name = 'Tom';
+char example = 'c'; 
+i8 int8 = 255;
+bool isAge = true;
+let n = int8;
 
-let car = "Tesla";
+print(age);
+print(name);
+print(example);
+print(int8);
+print(isAge);
+print(n);
+
+const car = "Tesla";
 print(car); 
 

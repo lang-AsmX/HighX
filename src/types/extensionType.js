@@ -8,6 +8,12 @@ class ExtensionType {
         }
     }
 
+    static is(type) {
+        type = type.toLowerCase();
+        if (/i[0-9]+/.test(type)) return true;
+        return false;
+    }
+
     static isIntX(t, num) {
         return 0 < num ? (Math.pow(2, t) - 1) >= num : false;
     }
